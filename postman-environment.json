@@ -1,0 +1,15 @@
+{
+    "name": "dev",
+    "values": [
+        {
+            "key": "regId",
+            "value": "2f4dfd9c-2d86-47be-9fae-ea1cb11d80d7",
+            "enabled": true
+        },
+        {
+            "key": "entryId",
+            "value": "ec0d1913-46ff-4bc4-9295-d0a0553d5da9",
+            "enabled": true
+        }
+    ]
+}
