@@ -19,7 +19,7 @@ for i in range(20):
 
 # Add entry
 if regAdded:
-    file = 'samples/swagger.json'
+    file = '../samples/swagger.json'
     for i in range(20):
         payload = {
             'entryName': 'Pizzashack-Endpoint ' + str(random.randint(0, 100)),
