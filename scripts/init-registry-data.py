@@ -31,7 +31,7 @@ if regAdded:
             'metadata': '{ \'mutualTLS\' : true }'
         }
 
-        entry = EndpointRegUtil.addRegistryEntry(reg["id"],
+        entry = EndpointRegUtil.addRegistryEntry(reg['id'],
                                                  payload, file)
         if entry is not None:
             entryAdded = True
@@ -40,7 +40,7 @@ if regAdded:
 
 # Delete registry
 if regAdded and not entryAdded:
-    EndpointRegUtil.deleteRegistry(reg["id"])
+    EndpointRegUtil.deleteRegistry(reg['id'])
 
 # Dump postman environment file
 if regAdded and entryAdded:
@@ -63,4 +63,4 @@ if regAdded and entryAdded:
     with open('postman-environment.json', 'w', encoding='utf-8') as f:
         json.dump(environment, f, ensure_ascii=False, indent=4)
 else:
-    print("No record added")
+    print('No record added')
