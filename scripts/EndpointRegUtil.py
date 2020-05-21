@@ -108,12 +108,18 @@ class EndpointRegUtil:
             'Authorization': 'Basic ' + EndpointRegUtil.BASIC_AUTH_CREDENTIALS,
             'Content-Type': 'multipart/form-data'
         }
-        files = {
-            'registryEntry': (None, json.dumps(payload),
-                              'application/json'),
-            'definitionFile': (os.path.basename(file), open(file, 'rb'),
-                               'application/octet-stream')
-        }
+        if file is None:
+            files = {
+                'registryEntry': (None, json.dumps(payload),
+                                  'application/json')
+            }
+        else:
+            files = {
+                'registryEntry': (None, json.dumps(payload),
+                                  'application/json'),
+                'definitionFile': (os.path.basename(file), open(file, 'rb'),
+                                   'application/octet-stream')
+            }
 
         response = requests.post(EndpointRegUtil.BASE_URL + '/' + regId
                                  + '/entry',
