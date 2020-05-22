@@ -1,0 +1,9 @@
+{
+  "CARBON_APIMGT_LOCATION": "/Users/chamod/wso2/carbon-apimgt",
+  "PATCH_DIR": "/Users/chamod/wso2/test/scripts/temp/patches9999",
+  "WEB_APP_DIR": "/Users/chamod/wso2/test/scripts/temp/webApps",
+  "IGNORED_COMPONENTS": [
+    "org.wso2.carbon.apimgt.rest.api.publisher.v1",
+    "org.wso2.carbon.apimgt.rest.api.admin.v1"
+  ]
+}
