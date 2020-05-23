@@ -4,13 +4,14 @@ import subprocess
 from xml.dom import minidom
 import shutil
 import json
+import sys
 
 PREFIX = 'components/apimgt/'
 
-def readConfig():
-    with open('config.json', 'r') as f:
-        data = f.read()
 
+def readConfig(configPath):
+    with open(configPath, 'r') as f:
+        data = f.read()
     return json.loads(data)
 
 
@@ -24,14 +25,14 @@ def extracyCarbonApimgtVersion(config):
         .nodeValue
 
 
-def extractComponents(files):
-    print('\nExtracting components...')
+def extractModifiedComponents(files):
+    print('\nExtracting modified components...')
     components = set()
     for file in files:
         if file.startswith(PREFIX):
             component = file.replace(PREFIX, '').split('/')[0]
             components.add(component)
-    print('Extracted components: ' + str([c for c in components]))
+    print('Modified components: ' + str([c for c in components]))
     return components
 
 
@@ -51,12 +52,28 @@ def buildComponents(config, components):
             config['CARBON_APIMGT_LOCATION'], PREFIX, c)
         p = subprocess.Popen(['mvn', 'clean', 'install', '-Dmaven.test.skip=true'],
                              cwd=os.path.join(config['CARBON_APIMGT_LOCATION'],
-                                              PREFIX, COMPONENT_PATH))
-        p.wait()
+                                              PREFIX, COMPONENT_PATH),
+                             stdout=subprocess.PIPE)
+        status = False
+        while True:
+            output = p.stdout.readline()
+            if output:
+                print(output)
+                if not status and b'BUILD SUCCESS' in output:
+                    status = True
+            if p.poll() is not None:
+                break
+
+        if status:
+            print('\nSuccesfully built <' + c + '>\n')
+        else:
+            print('\nFailed to build <' + c + '>\n')
+            return False
+    return True
 
 
 def patchComponents(config, components, version):
-    print('\nCopying built components...')
+    print('\nPatching built components...')
     for c in components:
         COMPONENT_TARGET_PATH = os.path.join(config['CARBON_APIMGT_LOCATION'],
                                              PREFIX, c, 'target')
@@ -65,14 +82,14 @@ def patchComponents(config, components, version):
             source = os.path.join(COMPONENT_TARGET_PATH, f)
             if f == c + '-' + version + '.zip' \
                     or f == c + '-' + version + '.jar':
-                # Copr new JAR/ZIP
+                # Copy new JAR/ZIP
                 destination = os.path.join(
                     config['PATCH_DIR'], f.replace('-', '_', 1))
                 shutil.copyfile(source, destination)
                 print('Copied ' + source + ' to ' + destination + '\n')
             elif f.endswith('.war'):
                 try:
-                    # Deleted extracted WAR
+                    # Delete extracted WAR
                     extractedWar = os.path.join(
                         config['WEB_APP_DIR'], f.replace('.war', ''))
                     shutil.rmtree(extractedWar)
@@ -85,19 +102,37 @@ def patchComponents(config, components, version):
                 print('Copied ' + source + ' to ' + destination + '\n')
 
 
-config = readConfig()
+def run(configPath):
+    config = readConfig(configPath)
+    carbonApimgtVersion = extracyCarbonApimgtVersion(config)
+    if not carbonApimgtVersion:
+        print('Failed to detect carbon.apimgt.version')
+        return
+    print('carbon.apimgt.version: ' + carbonApimgtVersion)
 
-repo = Repo(config['CARBON_APIMGT_LOCATION'])
-assert not repo.bare
+    repo = Repo(config['CARBON_APIMGT_LOCATION'])
+    assert not repo.bare
 
-modifiedFiles = [item.a_path for item in repo.index.diff(None)]
+    modifiedFiles = [item.a_path for item in repo.index.diff(None)]
+    if not modifiedFiles:
+        print('No modified files')
+        return
 
-components = extractComponents(modifiedFiles)
+    components = extractModifiedComponents(modifiedFiles)
+    if not components:
+        print('Modified Component extraction failed')
+        return
 
-components = filterIgnoredComponents(config, components)
+    components = filterIgnoredComponents(config, components)
+    if not components:
+        print('No Components after filtering ignored components')
+        return
 
-buildComponents(config, components)
+    buildStatus = buildComponents(config, components)
+    if not buildStatus:
+        return
 
-carbonApimgtVersion = extracyCarbonApimgtVersion(config)
+    patchComponents(config, components, carbonApimgtVersion)
 
-patchComponents(config, components, carbonApimgtVersion)
+
+run(sys.argv[1])
